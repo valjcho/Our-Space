@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kawaii Squad</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #1a1a2e;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── DRAGGABLE WIDGET BASE ── */
+.widget {
+  position: absolute;
+  cursor: grab;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.widget:active { cursor: grabbing; }
+.widget-header {
+  background: rgba(255,255,255,0.07);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 14px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  letter-spacing: 1px;
+}
+.drag-hint { font-size: 10px; opacity: 0.3; }
+
+/* ── TABLE WIDGET ── */
+#tableWidget {
+  top: 60px; left: 60px;
+  background: rgba(20,10,40,0.95);
+  border: 1px solid rgba(255,180,255,0.15);
+  width: 420px;
+}
+
+.scene {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Table */
+.table-area {
+  position: relative;
+  width: 340px;
+  height: 180px;
+}
+
+.table-top {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px; height: 110px;
+  background: radial-gradient(ellipse, #5a3a1a, #3a2010);
+  border-radius: 50%;
+  border: 3px solid #8b5e2a;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.6), inset 0 2px 8px rgba(255,200,100,0.1);
+  z-index: 1;
+}
+
+/* Tea cups on table */
+.table-top::before {
+  content: "☕ ☕ ☕";
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  letter-spacing: 6px;
+}
+
+.character {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 2;
+  transition: transform 0.2s;
+}
+.character:hover { transform: scale(1.15); }
+
+.chibi {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  line-height: 1;
+}
+
+.char-name {
+  font-size: 9px;
+  font-weight: 700;
+  color: white;
+  background: rgba(0,0,0,0.5);
+  border-radius: 8px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-top: -2px;
+}
+.online  { background: #3ddc84; box-shadow: 0 0 6px #3ddc84; }
+.away    { background: #ffb347; box-shadow: 0 0 6px #ffb347; }
+.offline { background: #555; }
+
+/* ── TO DO WIDGET ── */
+#todoWidget {
+  top: 60px; left: 520px;
+  background: rgba(15,10,35,0.97);
+  border: 1px solid rgba(180,130,255,0.2);
+  width: 260px;
+}
+
+.todo-body { padding: 12px; }
+
+.todo-input-row {
+  display: flex; gap: 6px; margin-bottom: 10px;
+}
+.todo-input-row input {
+  flex: 1;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 7px 10px;
+  color: white;
+  font-size: 12px;
+  outline: none;
+}
+.todo-input-row input::placeholder { opacity: 0.3; color: white; }
+.todo-input-row button {
+  background: linear-gradient(135deg, #c471ed, #f64f59);
+  border: none; border-radius: 10px;
+  color: white; font-size: 16px;
+  width: 32px; cursor: pointer;
+  font-weight: bold;
+}
+
+.todo-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+
+.todo-item {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.06);
+  animation: popIn 0.2s ease;
+}
+@keyframes popIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+
+.todo-item input[type=checkbox] { accent-color: #c471ed; width: 14px; height: 14px; cursor: pointer; flex-shrink:0; }
+.todo-item.done span { text-decoration: line-through; opacity: 0.35; }
+.todo-item span { flex: 1; }
+.todo-item .del { background: none; border: none; color: rgba(255,100,100,0.4); cursor: pointer; font-size: 14px; padding: 0 2px; }
+.todo-item .del:hover { color: rgba(255,100,100,0.9); }
+
+.todo-footer { margin-top: 8px; font-size: 10px; color: rgba(255,255,255,0.2); text-align: center; }
+
+/* ── MANAGE FRIENDS WIDGET ── */
+#friendsWidget {
+  top: 340px; left: 60px;
+  background: rgba(15,10,35,0.97);
+  border: 1px solid rgba(255,180,130,0.15);
+  width: 420px;
+}
+.friends-body { padding: 12px; }
+.add-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.add-row input, .add-row select {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 6px 10px;
+  color: white;
+  font-size: 12px;
+  outline: none;
+}
+.add-row input { flex: 1; min-width: 80px; }
+.add-row select { background: #1a1030; }
+.add-row select option { background: #1a1030; }
+.add-row button {
+  background: linear-gradient(135deg, #f9a825, #f64f59);
+  border: none; border-radius: 10px;
+  color: white; font-size: 12px; font-weight: 700;
+  padding: 6px 12px; cursor: pointer;
+}
+.friends-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.friend-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  padding: 4px 10px 4px 6px;
+  font-size: 11px; color: white;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.friend-chip .remove { background: none; border: none; color: rgba(255,100,100,0.5); cursor: pointer; font-size: 12px; margin-left: 2px; }
+.friend-chip .remove:hover { color: rgba(255,100,100,1); }
+
+.timer-body { padding: 12px; color: white }
+
+</style>
+</head>
+<body>
+
+<!-- WIDGET 1: TABLE SCENE -->
+<div class="widget" id="tableWidget">
+  <div class="widget-header">
+    <span>🌸 MY SQUAD</span>
+    <span class="drag-hint">✥ drag me</span>
+  </div>
+  <div class="scene">
+    <div class="table-area" id="tableArea">
+      <div class="table-top"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WIDGET 2: TO DO LIST -->
+<div class="widget" id="todoWidget">
+  <div class="widget-header">
+    <span>✅ TO DO LIST</span>
+    <span class="drag-hint">✥ drag me</span>
+  </div>
+  <div class="todo-body">
+    <div class="todo-input-row">
+      <input id="todoInput" placeholder="Add a task..." />
+      <button onclick="addTodo()">+</button>
+    </div>
+    <div class="todo-list" id="todoList"></div>
+    <div class="todo-footer" id="todoFooter"></div>
+  </div>
+</div>
+
+<!-- WIDGET 3: MANAGE FRIENDS -->
+<div class="widget" id="friendsWidget">
+  <div class="widget-header">
+    <span>🎀 MANAGE SQUAD</span>
+    <span class="drag-hint">✥ drag me</span>
+  </div>
+  <div class="friends-body">
+    <div class="add-row">
+      <input id="friendName" placeholder="Friend's name" maxlength="10" />
+      <select id="friendEmoji">
+        <option>🐱</option><option>🐰</option><option>🦊</option>
+        <option>🐼</option><option>🐸</option><option>🐮</option>
+        <option>🦄</option><option>🐻</option><option>🐹</option>
+        <option>🦋</option>
+      </select>
+      <select id="friendStatus">
+        <option value="online">Online</option>
+        <option value="away">Away</option>
+        <option value="offline">Offline</option>
+      </select>
+      <button onclick="addFriend()">Add</button>
+    </div>
+    <div class="friends-grid" id="friendsGrid"></div>
+  </div>
+</div>
+
+<div class="widget" id="timerWidget">
+  <div class="widget-header">
+    <span>🎀 TIMER</span>
+    <span class="drag-hint">✥ drag me</span>
+  </div>
+  <div class="timer-body">
+    <span id="time">05:00</span>
+  </div>
+</div>
+
+<script>
+// -- timer -- //
+function startTimer(duration, display) {
+    var timer = duration, minutes, seconds;
+    setInterval(function () {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.textContent = minutes + ":" + seconds;
+
+        if (--timer < 0) {
+            timer = duration;
+        }
+    }, 1000);
+}
+
+window.onload = function () {
+    var fiveMinutes = 60 * 5,
+        display = document.querySelector('#time');
+    startTimer(fiveMinutes, display);
+};
+
+
+// ── DRAGGING ──
+function makeDraggable(el) {
+  let ox, oy, startX, startY;
+  el.addEventListener('mousedown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+    ox = el.offsetLeft; oy = el.offsetTop;
+    startX = e.clientX; startY = e.clientY;
+    const onMove = e => {
+      el.style.left = (ox + e.clientX - startX) + 'px';
+      el.style.top  = (oy + e.clientY - startY) + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+document.querySelectorAll('.widget').forEach(makeDraggable);
+
+// ── FRIENDS ──
+let friends = [
+  { name: 'You', emoji: '🦄', status: 'online' },
+  { name: 'Alex', emoji: '🐱', status: 'online' },
+  { name: 'Mia',  emoji: '🐰', status: 'away'   },
+  { name: 'Sam',  emoji: '🦊', status: 'offline' },
+];
+
+const positions = [
+  { top: '8px',  left: '50%',  transform: 'translateX(-50%)' },  // top
+  { top: '50%',  left: '8px',  transform: 'translateY(-50%)' },  // left
+  { top: '50%',  right: '8px', transform: 'translateY(-50%)' },  // right
+  { bottom: '8px', left: '50%', transform: 'translateX(-50%)' }, // bottom
+  { top: '12px', left: '18px' },
+  { top: '12px', right: '18px' },
+  { bottom: '12px', left: '18px' },
+  { bottom: '12px', right: '18px' },
+  { top: '30%',  left: '4px' },
+  { top: '30%',  right: '4px' },
+];
+
+function renderTable() {
+  const area = document.getElementById('tableArea');
+  // remove old characters
+  area.querySelectorAll('.character').forEach(c => c.remove());
+  friends.slice(0, 10).forEach((f, i) => {
+    const pos = positions[i % positions.length];
+    const el = document.createElement('div');
+    el.className = 'character';
+    Object.assign(el.style, pos);
+    el.innerHTML = `
+      <div class="chibi">${f.emoji}</div>
+      <div class="char-name">${f.name}</div>
+      <div class="status-dot ${f.status}"></div>
+    `;
+    area.appendChild(el);
+  });
+}
+
+function renderFriendsGrid() {
+  const grid = document.getElementById('friendsGrid');
+  grid.innerHTML = '';
+  friends.forEach((f, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'friend-chip';
+    chip.innerHTML = `${f.emoji} <span>${f.name}</span> <button class="remove" onclick="removeFriend(${i})">✕</button>`;
+    grid.appendChild(chip);
+  });
+}
+
+function addFriend() {
+  const name = document.getElementById('friendName').value.trim();
+  if (!name || friends.length >= 10) return;
+  friends.push({
+    name,
+    emoji:  document.getElementById('friendEmoji').value,
+    status: document.getElementById('friendStatus').value,
+  });
+  document.getElementById('friendName').value = '';
+  renderTable();
+  renderFriendsGrid();
+}
+
+function removeFriend(i) {
+  if (i === 0) return; // can't remove yourself
+  friends.splice(i, 1);
+  renderTable();
+  renderFriendsGrid();
+}
+
+// ── TO DO ──
+let todos = [];
+
+function addTodo() {
+  const input = document.getElementById('todoInput');
+  const text = input.value.trim();
+  if (!text) return;
+  todos.push({ text, done: false });
+  input.value = '';
+  renderTodos();
+}
+
+function renderTodos() {
+  const list = document.getElementById('todoList');
+  list.innerHTML = '';
+  todos.forEach((t, i) => {
+    const item = document.createElement('div');
+    item.className = 'todo-item' + (t.done ? ' done' : '');
+    item.innerHTML = `
+      <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${i})" />
+      <span>${t.text}</span>
+      <button class="del" onclick="deleteTodo(${i})">🗑</button>
+    `;
+    list.appendChild(item);
+  });
+  const done = todos.filter(t => t.done).length;
+  document.getElementById('todoFooter').textContent =
+    todos.length ? `${done} of ${todos.length} done ✨` : '';
+}
+
+function toggleTodo(i) { todos[i].done = !todos[i].done; renderTodos(); }
+function deleteTodo(i) { todos.splice(i, 1); renderTodos(); }
+
+document.getElementById('todoInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTodo();
+});
+
+// ── INIT ──
+renderTable();
+renderFriendsGrid();
+</script>
+</body>
+</html>
